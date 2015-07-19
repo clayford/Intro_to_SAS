@@ -65,7 +65,7 @@ libname myclass 'C:\Users\jcf2d\sas_examples';
 
 /*The libname "myclass" is simply an alias for the folder "sas_examples"*/
 
-data myclass.grades;
+data myclass.grades;		/*notice "myclass." added before grades*/
 	input name $ grade;
 	datalines;
 Clay 89
@@ -80,8 +80,62 @@ run;
 /*That's the extension for permanent SAS data sets.*/
 /*If we close SAS, we'll still have the grades data set.*/
 
+/*To load a SAS data set, we use the DATA step with a set statement.*/
+
+data grades;
+	set myclass.grades;		/*load SAS data set in myclass library*/
+run;
+
+/*Can also load the sas data set in the work library*/
+
+data grades;
+	set grades;				/*in work library*/
+run;
+
+
 /*Reading in data from an external file is more complicated.*/
 /*If you're not interested in writing SAS code, you can use the File Import wizard.*/
 /*Go to File...Import Data...*/
+/*This is very useful if reading in a data set with several columns.*/
 
+/*Otherwise we use the DATA step with an infile statement.*/
+/*Below we read in a CSV file;*/
+
+data grades2;
+	infile 'C:\Users\jcf2d\Documents\_workshops\Intro_to_SAS\grades.csv' dsd firstobs=2;
+	input name $ grade;
+run;
+
+/*dsd = data-sensitive delimiter;*/
+/*firstobs=2 means first record begins on line 2*/
+/*For Tab-delimited files use "dsd dlm='09'x" in the infile statement;*/
+
+/*The DATA step can also generate new columns based on data being read in*/
+data grades2;
+	infile 'C:\Users\jcf2d\Documents\_workshops\Intro_to_SAS\grades.csv' dsd firstobs=2;
+	input name $ grade;
+
+	/*assign letter grade*/
+	if grade > 89 then letter = "A";
+	else if grade > 79 then letter = "B";
+run;
+
+/*USING FILE IMPORT WIZARD*/
+
+/*Let's read in the csv file newspapers.csv using the Import Wizard*/
+/*Note: "Member" means "name of sas data set"*/
+
+/*What did we just read in? We can double-click on the data set in Explorer.*/
+/*We can also inspect the log.*/
+/*But if we have dozens (or hundreds) of columns that can be inefficient.*/
+
+/*Now we start using PROC steps*/
+
+/*PROC PRINT will print the data to the results viewer*/
+proc print data=newspapers;
+run;
+
+/*PROC CONTENTS will tell you about your sas data set*/
+proc contents data=newspapers;
+run;
 
