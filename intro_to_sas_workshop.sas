@@ -131,11 +131,36 @@ run;
 
 /*Now we start using PROC steps*/
 
+/*PROC CONTENTS will tell you about your sas data set*/
+proc contents data=newspapers;
+run;
+
 /*PROC PRINT will print the data to the results viewer*/
 proc print data=newspapers;
 run;
 
-/*PROC CONTENTS will tell you about your sas data set*/
-proc contents data=newspapers;
+/*proc contents tells us all columns are stored as character type.*/
+/*That's not correct for the last two columns which are circulation numbers.*/
+/*We need to make those numeric if we wish to calculate summary statistics*/
+/*such as means, totals, etc.*/
+
+/*One way to fix this is by using the "input" function.*/
+/*The input function performs a character-to-numeric conversion according to*/
+/*a specified "informat".*/
+
+/*Notice we can't overwrite the existing variables. We have to create new ones.*/
+/*Also notice the drop statement to remove the old character columns*/
+data newspapers;
+	set newspapers;
+	sun_satn = input(sun_sat, comma9.);
+	wkdyn = input(wkdy, comma8.);
+	drop sun_sat wkdy;
 run;
+
+
+/*View first 5 records*/
+proc print data=newspapers(obs=5);
+run;
+
+/*Notice the Report Date column is also stored as character.*/
 
