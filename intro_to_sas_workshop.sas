@@ -16,7 +16,7 @@ Fall 2015
 /* Wrap selection (or current line) in a comment: Ctrl + /  */
 /* Unwrap selection (or current line) from a comment: Ctrl + Shift + /  */
 
-********** THE DATA STEP ************;
+********** DATA MANAGEMENT ************;
 
 /*The data step is where we read in and prepare data for analysis.*/
 
@@ -261,11 +261,13 @@ run;
 
 proc print data=newspapers(obs=10);
 	format sunsatcat sscat.;		/*notice the period after the format*/
+	var publication_name sunsatcat; 	/*specify which variables to print*/
 run;
 
 /*To clarify we created a format called "sscat" that we apply to sunsatcat.*/
 /*sunsatcat is still stored as numbers*/
 proc print data=newspapers(obs=10);
+	var publication_name sunsatcat;
 run;
 
 /*Sorting data in SAS requires PROC SORT*/
@@ -289,7 +291,7 @@ proc sort data=newspapers;
 	by state weekday;
 run;
 proc print data=newspapers(obs=10);
-	var publication_name state weekday;	/*specify which variables to print*/
+	var publication_name state weekday;	
 run;
 
 /*Notice that PROC SORT is actually changing the sort order of the data set.*/
@@ -307,3 +309,76 @@ title 'First Five Rows of newspapers';
 proc print data=newspapers(obs=5);
 	var publication_name sunsat;
 run;
+
+
+********** DESCRIPTIVE STATISTICS ************;
+
+/*SAS provides many ways to tabulate and summarize data.*/
+/*Two PROCs commonly used for this:*/
+/*1. PROC FREQ*/
+/*2. PROC MEANS*/
+
+/*Tablulate type and sunsatcat and create a 2-way table*/
+proc freq data=newspapers;
+	tables type sunsatcat type*sunsatcat;
+run;
+
+/*By default PROC FREQ returns a lot of numbers.*/
+/*We can suppress them with various options in the tables statement:*/
+
+proc freq data=newspapers;
+	tables type sunsatcat type*sunsatcat / nocol nocum nopercent norow;
+	format sunsatcat sscat.;
+run;
+
+/*We can also look at tabulations of one variable by another.*/
+/*The data must first be sorted on the BY variable.*/
+proc sort data=newspapers;
+	by type;
+run;
+proc freq data=newspapers;
+	by type;
+	tables sunsatcat;
+run;
+
+
+/*The plots= option in the tables statement provides various plots.*/
+/*Below we demonstrate freqplot (ie, a bar graph).*/
+
+proc freq data=newspapers;
+	tables type sunsatcat / plots=freqplot;
+run;
+
+/*same as above except as a dot plot*/
+proc freq data=newspapers;
+	tables type sunsatcat / plots=freqplot(type=dotplot);
+run;
+
+/*Take a look at the help pages for PROC FREQ to appreciate */
+/*just how much it can do. It is one mighty PROC. */
+/*Go to Help...SAS Help and Documentation...SAS Products...Base SAS...*/
+/*Base SAS 9.4 Procedures Guide: Statistical Procedures.*/
+
+/*Notice the examples are designed to be copied and pasted into a SAS program and run.*/
+
+/*PROC MEANS produces summary statistics for continuous values.*/
+proc means data=newspapers;
+	var weekday sunsat;
+run;
+
+/*Use the CLASS statement to calculate stats by a grouping variable*/
+/*BY works too, but data must first be sorted by the BY variable*/
+proc means data=newspapers;
+	var weekday;
+	class sunsatcat;
+run;
+
+/*Use the WHERE statement to subset the data before summarizing*/
+proc means data=newspapers;
+	var weekday;
+	where state="VA";
+run;
+
+
+********** BASIC GRAPHING ************;
+
