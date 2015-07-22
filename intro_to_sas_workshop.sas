@@ -379,6 +379,182 @@ proc means data=newspapers;
 	where state="VA";
 run;
 
+/*see also PROC UNIVARIATE for summarizing numeric data*/
 
 ********** BASIC GRAPHING ************;
 
+/*Many PROCs include options for producing graphs as we saw with PROC FREQ.*/
+/*If creating graphs and plots gives you heartburn, then check the documentation*/
+/*for the PROC(s) you are using. There may be a simple option that will generate*/
+/*just the graph you need.*/
+
+/*For example say you want a histogram of the sunsat data in newspapers.*/
+/*PROC UNIVARIATE has a built-in statement for this.*/
+
+proc univariate data=newspapers noprint;	/*noprint suppresses the summary stats*/
+	histogram sunsat;
+run;
+
+/*For more control over SAS graphing, we turn to SAS/GRAPH.*/
+/*This is technically a product into itself. The UVa SAS license includes*/
+/*SAS/GRAPH, so this distinction is minor. But if you use the Free*/
+/*SAS University Edition, it does not include SAS/GRAPH. In that case you */
+/*might want to use something like PROC SGPLOT, which is part of something */
+/*called ODS graphics. */
+
+/*Good idea to reset graphics options before starting a new chart:*/
+goptions reset=all; 	/*Pronounce as "G-Options"*/
+
+/*BAR CHART*/
+proc gchart data=newspapers;
+	vbar type;
+run;
+quit;	/*include a quit statement to stop gchart from running*/
+
+/*BAR CHART FOR CONTINUOUS VARIABLE*/
+proc gchart data=newspapers;
+	vbar weekday;
+run;
+quit;	
+
+/* redefine bins and format x axis*/
+proc gchart data=newspapers;
+	vbar weekday / midpoints = 0 to 1000000 by 100000;
+	format weekday comma9.;
+run;
+quit;	
+
+/*BAR CHARTS REPRESENTING SUMS*/
+
+/*Bar chart displaying total weekday subscribers by Type*/
+proc gchart data=newspapers;
+	vbar type / sumvar=weekday
+				type=sum;
+	format weekday comma10.;
+run;
+quit;	
+
+/*Bar chart displaying mean weekday subscribers by Type*/
+proc gchart data=newspapers;
+	vbar type / sumvar=weekday
+				type=mean;
+	format weekday comma10.;
+run;
+quit;	
+
+/*SCATTER PLOTS*/
+
+/*scatter plots require proc gplot with a plot statement*/
+proc gplot data=newspapers;
+	plot weekday*sunsat;
+run;
+quit;	
+
+/*If you want to change the plotting symbols, use the symbol option*/
+/*To add a title, use the title option.*/
+title 'Scatter Plot SunSat vs Weekday subscriptions';
+symbol value=dot;
+proc gplot data=newspapers;
+	plot weekday*sunsat;
+run;
+quit;	
+
+/*A where statement allows us to graph only a subset of the data*/
+goptions reset=all;			/*reset title and plotting symbol*/
+proc gplot data=newspapers;
+	plot weekday*sunsat;
+	where state="VA";		/*only graph records with state="VA"*/
+run;
+quit;	
+
+/*Add grouping to the scatter plot using PROC SGPLOT*/
+proc sgplot data=newspapers;
+	scatter x=weekday y=sunsat / group=type;
+	where state="VA";
+run;
+quit;
+
+/*Boxplots of weekday using PROC SGPLOT for "VA","NC","SC","MD" */
+proc sgplot data=newspapers;
+	hbox weekday / category=type;
+	where state in ("VA","NC","SC","MD");
+run;
+quit;
+
+/*Again, PROC GPLOT is part of SAS/GRAPH. PROC SGPLOT is part of ODS Graphics.*/
+
+********** BASIC STATISTICS ************;
+
+/*SAS originally stood for Statistical Analysis System.*/
+/*Statistics is what SAS was intended to do.*/
+/*Most statistical analyses in SAS are performed using PROCs.*/
+/*The documentation for PROCs include examples which are*/
+/*very useful for implementing and understanding a statistical */
+/*analysis. We will use these examples below.*/
+
+/*Documentation for Statistical PROCs are located in Help under*/
+/*SAS Products...SAS/STAT...SAS/STAT Users Guide*/
+
+/*The TTEST Procedure*/
+/*one-sample T-test*/
+/*Data and analysis copied from the PROC TTEST examples*/
+
+
+/*testswhether the mean length of a certain type of court case is */
+/*more than 80 days by using 20 randomly chosen cases.*/
+
+data time;
+   input time @@;
+   datalines;
+ 43  90  84  87  116   95  86   99   93  92
+121  71  66  98   79  102  60  112  105  98
+;
+
+/*The only variable in the data set, time, is assumed to be normally distributed. */
+/*The trailing at signs (@@) indicate that there is more than one observation on a line. */
+/*The following statements invoke PROC TTEST for a one-sample t test: */
+
+ods graphics on;
+proc ttest data=time h0=80 plots(showh0) sides=u alpha=0.1; 
+   var time;
+run;
+ods graphics off;
+
+/*The REG procedure*/
+/*multiple regression*/
+
+/*investigate whether you can model player salaries for the 1987 season based on */
+/*batting statistics for the previous season and lifetime batting performance.*/
+
+ods graphics on;
+proc reg data=sashelp.baseball;		/*built-in dataset with SAS*/
+   id name team league;
+   model logSalary = nhits nruns nrbi nbb yrmajor crhits;
+run;
+quit;
+ods graphics off;
+
+/*The ANOVA Procedure*/
+/*Randomized Complete Block with One Factor*/
+
+/*Do three treatments have different effects on the yield and worth of a particular crop?*/
+
+data RCB;
+   input Block Treatment $ Yield Worth @@;
+   datalines;
+1 A 32.6 112   1 B 36.4 130   1 C 29.5 106
+2 A 42.7 139   2 B 47.1 143   2 C 32.9 112
+3 A 35.3 124   3 B 40.1 134   3 C 33.6 116
+;
+run;
+
+/*The variables Yield and Worth are continuous response variables, */
+/*and the variables Block and Treatment are the classification variables. */
+proc anova data=RCB;
+   class Block Treatment;
+   model Yield Worth=Block Treatment;
+   means Treatment / 
+		tukey 		/*tukey corrects fpr multiple comparisons*/
+		cldiff;		/*display confidence limits*/
+run;
+quit;
