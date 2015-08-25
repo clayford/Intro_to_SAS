@@ -1,5 +1,5 @@
 /*
-Intro to SAS
+Intro to SAS workshop
 UVa StatLab
 Clay Ford (jcf2d)
 Fall 2015
@@ -10,17 +10,19 @@ Fall 2015
 
 *To start a new SAS Program, File...New Program (or Ctrl + N);
 
-*Notice the editor auotmatically color codes the syntax;
+/*To turn on line numbering, Tools...Options...Enhanced Editor,*/
+/*on the General Tab check the Show Line Numbers box */
 
 /* Quick commenting  */
 /* Wrap selection (or current line) in a comment: Ctrl + /  */
 /* Unwrap selection (or current line) from a comment: Ctrl + Shift + /  */
 
-********** DATA MANAGEMENT ************;
+
+********** THE DATA STEP ************;
 
 /*The data step is where we read in and prepare data for analysis.*/
 
-/*Two ways to read in data:
+/*Two common ways to get data into SAS:
 
 1. enter the data directly in the data step 
 2. read in data from an external file.
@@ -28,20 +30,23 @@ Fall 2015
 There are others, but these are the ones we'll cover.
 */
 
+
+* #### 1. enter data in data step #### ;
+
 /*Below we enter the data directly in the data step.
 Highlight the code block and press F8 */
 
 data grades;  				/* name of data set */
 	input name $ grade;		/* column headers; $ means character */
-	datalines;				/* tell sas the following lines are data */
+	datalines;				
 Clay 89
 Michele 99
 Chelsea 94
-;							/*end of data line */
+;							/*end of datalines */
 run;						/*run the program */
 
 /*Did it work? Check the log.*/
-/*TIP: always check the log after submitting code!*/
+/*TIP: check the log after submitting newly-written code!*/
 
 /*It says: */
 /*The data set WORK.GRADES has 3 observations and 2 variables.*/
@@ -54,17 +59,17 @@ run;						/*run the program */
 
 /*If we close SAS at this point, we'll lose our SAS data set. */
 /*The WORK library is for temporary data sets.*/
-/*We can save our SAS data sets by creating our own library.*/
+
+/*We can create a permanent SAS data set by creating our own library.*/
 /*To do this, use the libname statement.*/
 
 /*ATTENTION!*/
 /*The following only works on MY computer.*/
 /*You need to change the path to a folder on your computer.*/
 
-libname myclass 'C:\Users\jcf2d\sas_examples';
-
 /*The libname "myclass" is simply an alias for the folder "sas_examples"*/
 
+libname myclass 'C:\Users\jcf2d\sas_examples'; 
 data myclass.grades;		/*notice "myclass." added before grades*/
 	input name $ grade;
 	datalines;
@@ -80,12 +85,18 @@ run;
 /*That's the extension for permanent SAS data sets.*/
 /*If we close SAS, we'll still have the grades data set.*/
 
-/*To load a SAS data set, we use the DATA step with a set statement.*/
+/*If we want, we can load a permanent SAS data set into the Work library.*/
+/*This is useful when you want to work with a permanent SAS data set but not overwrite it.*/
 
-data grades;
-	set myclass.grades;		/*load SAS data set in myclass library*/
+/*To load a permanent SAS data set, use the DATA step with a set statement.*/
+data gradework;
+	set myclass.grades;
 run;
 
+/*We now have a data set in Work called gradework that is a copy of my permanent SAS data set.*/
+/*When we close SAS, the gradework data set will be deleted but the grades data set will remain.*/
+
+* #### 2. read in data from external file #### ;
 
 /*Reading in data from an external file is more complicated.*/
 /*If you're not interested in writing SAS code, you can use the File Import wizard.*/
@@ -93,7 +104,11 @@ run;
 /*This is very useful if reading in a data set with several columns.*/
 
 /*Otherwise we use the DATA step with an infile statement.*/
-/*Below we read in a CSV file;*/
+/*Below we read in a CSV file called grades.csv;*/
+
+/*ATTENTION!*/
+/*The following only works on MY computer.*/
+/*You need to change the path to a folder on your computer that contains grades.csv.*/
 
 data grades2;
 	infile 'C:\Users\jcf2d\Documents\_workshops\Intro_to_SAS\grades.csv' dsd firstobs=2;
@@ -111,25 +126,39 @@ data grades2;
 
 	/*assign letter grade*/
 	if grade > 89 then letter = "A";
-	else if grade > 79 then letter = "B";
+	else letter = "B";
 run;
 
 /*USING FILE IMPORT WIZARD*/
 
-/*Let's read in the csv file newspapers.csv using the Import Wizard*/
-/*data on newspaper subscriptions: http://guides.lib.virginia.edu/datastats/a-z*/
+/*Let's read in the csv file newspapers.csv using the Import Wizard. */
+/*Data on newspaper subscriptions: http://data.library.virginia.edu/datasources/licensed/ */
 /*Alliance for Audited Media (AAM)*/
 
-/*File...Import Data...*/
-/*Note: In Import Wizard, "Member" means "name of sas data set"*/
+/*The newspapers.csv file is included with the workshop materials.*/
+/*To follow along below you need to have saved it to a location on your computer.*/
+
+/* STEPS: */
+/*1. Go to File...Import Data...*/
+/*2. Select Comma Separated Values (*.csv) from the pull down list, click Next*/
+/*3. click Browse..., navigate to the newspapers.csv file, highlight it and click Open; click Next*/
+/*4. Type "newspapers" in the Member field; in Import Wizard, "Member" means "name of SAS data set"*/
+/*5. click Finish*/
 
 /*What did we just read in? We can double-click on the data set in Explorer.*/
 /*We can also inspect the log.*/
-/*But if we have dozens (or hundreds) of columns that can be inefficient.*/
+/*Notice the log displays the DATA step program that SAS generated to read in the data.*/
 
-/*Now we start using PROC steps*/
+/*There's also an option export SAS data sets: File...Export Data*/
+/*This is useful for exporting SAS data sets to something such as a CSV file*/
+/*that can be read into other programs.*/
 
-/*PROC CONTENTS will tell you about your sas data set*/
+
+********** THE PROC STEPS ************;
+
+/* Once you have data loaded into SAS, you typically do stuff to it using PROC steps*/
+
+/*PROC CONTENTS will tell you about your SAS data set*/
 proc contents data=newspapers;
 run;
 
@@ -141,6 +170,13 @@ run;
 /*PROC PRINT will print the data to the results viewer*/
 proc print data=newspapers;
 run;
+
+/*"What's the difference between the Results Viewer and the Output window?"*/
+/*The Output window (aka the LISTING window) shows the traditional "monospace" output*/
+/*that SAS provided prior to SAS 9.3. To turn it on:*/
+/*Tools...Options...Preferences...Results tab: Create Listing checkbox*/
+/*The Results Viewer was an update of the LISTING window to display output in nice HTML*/
+
 
 /*We can use the "obs=" option to view a limited number of records*/
 /*For example, view first 5 records*/
@@ -160,18 +196,20 @@ data newspapers;
 	set newspapers;						/*use the newspapers data set in the work library*/
 	if sun_sat ^= "" or wkdy ^= "";		/*^= means "not equal"; only keep records satisfying if statment*/
 run;
+/*Notice the log tells us how many records our updated data set has.*/
 
 /*Now we need to convert the subscriber columns to numeric*/
+/*The reason they're character is that the raw data contained commas.*/
 /*One way to do this is by using the "input" function.*/
-/*The input function performs a character-to-numeric conversion according to*/
-/*a specified "informat".*/
+/*The input function performs a character-to-numeric conversion according to a specified "informat".*/
+/*An informat is a specification for how raw data should be read.*/
 
 /*Notice we can't overwrite the existing variables. We have to create new ones.*/
 /*Also notice the drop statement to remove the old character columns*/
 data newspapers;
 	set newspapers;			
-	sun_satn = input(sun_sat, comma9.);		/*number of length 9 with commas*/
-	wkdyn = input(wkdy, comma8.);			/*number of length 8 with commas*/
+	sun_satn = input(sun_sat, comma9.);		/*sun_sat should be read as a number of length 9 with commas*/
+	wkdyn = input(wkdy, comma8.);			
 	drop sun_sat wkdy;
 run;
 
@@ -181,7 +219,7 @@ proc print data=newspapers(obs=5);
 run;
 
 /*Notice the missing values are now presented as dots (.)*/
-/*We can use this to subset the data*/
+/*We can also use this to subset the data*/
 /*For instance, see all records with missing sun_satn:*/
 proc print data=newspapers;
 	where sun_satn = .;
@@ -203,6 +241,7 @@ run;
 /*What if we want to rename variables?*/
 /*We can use a data step with a rename statement;*/
 /*Let's rename our subscriber number columns*/
+/*rename syntax: old name = new name*/
 data newspapers;
 	set newspapers;
 	rename sun_satn = sunsat wkdyn = weekday;
@@ -250,7 +289,9 @@ run;
 /*For example, perhaps we prefer to see "<= 10,000" instead of "1" */
 /*when viewing the sunsatcat column.*/
 
-/*To accomplish this we can use PROC FORMAT.*/
+/*To accomplish this we can use PROC FORMAT to define a "format".*/
+/*A "format" is a layout specification for how a variable should be printed or displayed.*/
+
 proc format;
 	value sscat 1 = "<= 10,000"
 				2 = "10,001 - 100,000"
@@ -259,6 +300,7 @@ proc format;
 	;
 run;
 
+/*Now we can apply this format when viewing the data*/
 proc print data=newspapers(obs=10);
 	format sunsatcat sscat.;		/*notice the period after the format*/
 	var publication_name sunsatcat; 	/*specify which variables to print*/
@@ -344,7 +386,17 @@ run;
 
 /*The plots= option in the tables statement provides various plots.*/
 /*Below we demonstrate freqplot (ie, a bar graph).*/
+proc freq data=newspapers;
+	tables type sunsatcat / plots=freqplot;
+run;
 
+/*Check the log: "WARNING: You must enable ODS graphics before requesting plots."*/
+/*ODS = Output Delivery System*/
+/*ODS Grapghic released with version SAS 9.2*/
+
+/*Enable ODS graphics with the syntax: */
+/*ods graphics on;*/
+ods graphics on;
 proc freq data=newspapers;
 	tables type sunsatcat / plots=freqplot;
 run;
@@ -374,6 +426,7 @@ proc means data=newspapers;
 run;
 
 /*Use the WHERE statement to subset the data before summarizing*/
+/*Here we dislay mean weekday circulation numbers for Virginia.*/
 proc means data=newspapers;
 	var weekday;
 	where state="VA";
@@ -399,8 +452,7 @@ run;
 /*This is technically a product into itself. The UVa SAS license includes*/
 /*SAS/GRAPH, so this distinction is minor. But if you use the Free*/
 /*SAS University Edition, it does not include SAS/GRAPH. In that case you */
-/*might want to use something like PROC SGPLOT, which is part of something */
-/*called ODS graphics. */
+/*might want to use something like PROC SGPLOT, which is part of ODS graphics. */
 
 /*Good idea to reset graphics options before starting a new chart:*/
 goptions reset=all; 	/*Pronounce as "G-Options"*/
@@ -417,7 +469,8 @@ proc gchart data=newspapers;
 run;
 quit;	
 
-/* redefine bins and format x axis*/
+/* In the previous graph, SAS automatically selected the bin sizes.*/
+/* We can redefine the bins if we like, and format the x axis*/
 proc gchart data=newspapers;
 	vbar weekday / midpoints = 0 to 1000000 by 100000;
 	format weekday comma9.;
@@ -433,14 +486,7 @@ proc gchart data=newspapers;
 	format weekday comma10.;
 run;
 quit;	
-
-/*Bar chart displaying mean weekday subscribers by Type*/
-proc gchart data=newspapers;
-	vbar type / sumvar=weekday
-				type=mean;
-	format weekday comma10.;
-run;
-quit;	
+/*What do you think happens if you change type=sum to type=mean*/
 
 /*SCATTER PLOTS*/
 
@@ -453,11 +499,13 @@ quit;
 /*If you want to change the plotting symbols, use the symbol option*/
 /*To add a title, use the title option.*/
 title 'Scatter Plot SunSat vs Weekday subscriptions';
-symbol value=dot;
+symbol value=+;
 proc gplot data=newspapers;
 	plot weekday*sunsat;
 run;
 quit;	
+/* A few other plotting symbol values: star, square, circle, #, =, plus, +*/
+
 
 /*A where statement allows us to graph only a subset of the data*/
 goptions reset=all;			/*reset title and plotting symbol*/
@@ -509,6 +557,7 @@ data time;
  43  90  84  87  116   95  86   99   93  92
 121  71  66  98   79  102  60  112  105  98
 ;
+run;
 
 /*The only variable in the data set, time, is assumed to be normally distributed. */
 /*The trailing at signs (@@) indicate that there is more than one observation on a line. */
@@ -523,12 +572,11 @@ ods graphics off;
 /*The REG procedure*/
 /*multiple regression*/
 
-/*investigate whether you can model player salaries for the 1987 season based on */
+/*investigate whether you can model baseball player salaries for the 1987 season based on */
 /*batting statistics for the previous season and lifetime batting performance.*/
 
 ods graphics on;
 proc reg data=sashelp.baseball;		/*built-in dataset with SAS*/
-   id name team league;
    model logSalary = nhits nruns nrbi nbb yrmajor crhits;
 run;
 quit;
@@ -554,7 +602,8 @@ proc anova data=RCB;
    class Block Treatment;
    model Yield Worth=Block Treatment;
    means Treatment / 
-		tukey 		/*tukey corrects fpr multiple comparisons*/
+		tukey 		/*tukey corrects for multiple comparisons*/
 		cldiff;		/*display confidence limits*/
 run;
 quit;
+
