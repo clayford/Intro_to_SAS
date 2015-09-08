@@ -25,13 +25,13 @@ Fall 2015
 /*Two common ways to get data into SAS:
 
 1. enter the data directly in the data step 
-2. read in data from an external file.
+2. read in data from an external file
 
 There are others, but these are the ones we'll cover.
 */
 
 
-* #### 1. enter data in data step #### ;
+* #### 1. enter data directly in data step #### ;
 
 /*Below we enter the data directly in the data step.
 Highlight the code block and press F8 */
@@ -56,12 +56,20 @@ run;						/*run the program */
 
 /*In the explorer, double click on Libraries, */
 /*then Work to see the SAS data set you created.*/
+/*You can double-click on the SAS data set to open it in read-only view.*/
+
+/********************/
+/*EXERCISE*/
+/*Modify program above to have an additional column called "gender" that */
+/*labels Clay as "M" and Chelsea and Michele as "F".*/
+/********************/
 
 /*If we close SAS at this point, we'll lose our SAS data set. */
 /*The WORK library is for temporary data sets.*/
 
 /*We can create a permanent SAS data set by creating our own library.*/
 /*To do this, use the libname statement.*/
+/*The libname statement assigns a library name to a folder on your computer.*/
 
 /*ATTENTION!*/
 /*The following only works on MY computer.*/
@@ -131,6 +139,9 @@ run;
 
 /*USING FILE IMPORT WIZARD*/
 
+/*If you have a file with many columns, */
+/*it's probably easier to read it in using the File Import Wizard.*/
+
 /*Let's read in the csv file newspapers.csv using the Import Wizard. */
 /*Data on newspaper subscriptions: http://data.library.virginia.edu/datasources/licensed/ */
 /*Alliance for Audited Media (AAM)*/
@@ -154,7 +165,7 @@ run;
 /*that can be read into other programs.*/
 
 
-********** THE PROC STEPS ************;
+********** THE PROC STEPS (and more data manipulation) ************;
 
 /* Once you have data loaded into SAS, you typically do stuff to it using PROC steps*/
 
@@ -163,7 +174,7 @@ proc contents data=newspapers;
 run;
 
 /*proc contents tells us all columns are stored as character type.*/
-/*That's not correct for the last two columns which are circulation numbers.*/
+/*That's not correct for sun_sat and wkdy which are circulation numbers.*/
 /*We need to make those numeric if we wish to calculate summary statistics*/
 /*such as means, totals, etc.*/
 
@@ -190,17 +201,18 @@ run;
 proc print data=newspapers;
 	where sun_sat = "" and wkdy = "";	
 run;
+/*Notice the log tells you how many records satisfied this condition.*/
 
 /*Let's drop these records using a data step, like so:*/
 data newspapers;
 	set newspapers;						/*use the newspapers data set in the work library*/
-	if sun_sat ^= "" or wkdy ^= "";		/*^= means "not equal"; only keep records satisfying if statment*/
+	if sun_sat ^= "" or wkdy ^= "";		/*^= means "not equal"; only keep records satisfying if statement*/
 run;
 /*Notice the log tells us how many records our updated data set has.*/
 
 /*Now we need to convert the subscriber columns to numeric*/
 /*The reason they're character is that the raw data contained commas.*/
-/*One way to do this is by using the "input" function.*/
+/*One way to make this conversion is by using the "input" function.*/
 /*The input function performs a character-to-numeric conversion according to a specified "informat".*/
 /*An informat is a specification for how raw data should be read.*/
 
@@ -208,7 +220,7 @@ run;
 /*Also notice the drop statement to remove the old character columns*/
 data newspapers;
 	set newspapers;			
-	sun_satn = input(sun_sat, comma9.);		/*sun_sat should be read as a number of length 9 with commas*/
+	sun_satn = input(sun_sat, comma9.);		/*sun_sat should be read as a number of length 9 with commas; see proc contents*/
 	wkdyn = input(wkdy, comma8.);			
 	drop sun_sat wkdy;
 run;
@@ -224,8 +236,14 @@ run;
 proc print data=newspapers;
 	where sun_satn = .;
 run;
-
 /*NOTE: the SAS log will tell you how many records met the condition*/
+
+
+/********************/
+/*EXERCISE*/
+/*Change the proc print program above to show those records with */
+/*sun_satn subscriber numbers greater than 100,000.*/
+/********************/
 
 /*Notice the Report Date column is also stored as character.*/
 /*It has AR appended to it (AR = Audited Report)*/
@@ -237,6 +255,9 @@ data newspapers;
 	report_month = substr(report_date,1,2);		/*1 = starting posision, 2 = length of string*/
 	report_year = substr(report_date,4,4);		/*4 = starting posision, 4 = length of string*/
 run;
+proc print data=newspapers(obs=5);
+run;
+
 
 /*What if we want to rename variables?*/
 /*We can use a data step with a rename statement;*/
@@ -244,7 +265,8 @@ run;
 /*rename syntax: old name = new name*/
 data newspapers;
 	set newspapers;
-	rename sun_satn = sunsat wkdyn = weekday;
+	rename sun_satn = sunsat 
+		   wkdyn = weekday;
 run;
 
 /*Technically, PROC DATASETS is more efficient for changing the metadata of data sets.*/
@@ -312,6 +334,7 @@ proc print data=newspapers(obs=10);
 	var publication_name sunsatcat;
 run;
 
+
 /*Sorting data in SAS requires PROC SORT*/
 /*Use the BY statement to indicate which variable(s) to sort on*/
 /*Use the descending keyword to change sort from ascending to descending*/
@@ -346,11 +369,17 @@ run;
 title 'First Five Rows of npsort';		/*change the title of the output*/
 proc print data=npsort(obs=5);
 	var publication_name sunsat;
+	format sunsat comma9.;
 run;
 title 'First Five Rows of newspapers';
 proc print data=newspapers(obs=5);
 	var publication_name sunsat;
+	format sunsat comma9.;
 run;
+title; 	/*reset the title*/
+
+/*Note: the format statement formats the output to display with commas.*/
+/*comma9 is a built-in SAS format.*/
 
 
 ********** DESCRIPTIVE STATISTICS ************;
@@ -390,16 +419,6 @@ proc freq data=newspapers;
 	tables type sunsatcat / plots=freqplot;
 run;
 
-/*Check the log: "WARNING: You must enable ODS graphics before requesting plots."*/
-/*ODS = Output Delivery System*/
-/*ODS Grapghic released with version SAS 9.2*/
-
-/*Enable ODS graphics with the syntax: */
-/*ods graphics on;*/
-ods graphics on;
-proc freq data=newspapers;
-	tables type sunsatcat / plots=freqplot;
-run;
 
 /*same as above except as a dot plot*/
 proc freq data=newspapers;
@@ -431,6 +450,13 @@ proc means data=newspapers;
 	var weekday;
 	where state="VA";
 run;
+
+
+/********************/
+/*EXERCISE*/
+/*Use proc means to calculate mean weekday circulation */
+/*numbers by Type of newspaper for the state of California.*/
+/********************/
 
 /*see also PROC UNIVARIATE for summarizing numeric data*/
 
